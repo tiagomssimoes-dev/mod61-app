@@ -247,7 +247,7 @@ textarea{min-height:70px;resize:vertical}
         <h3>Cópia de segurança</h3>
         <p class="note" style="margin-top:0">Os dados e as fotos das faturas ficam guardados apenas neste telemóvel. Exporte uma cópia de vez em quando.</p>
         <div class="row2"><button class="btn o" id="expBtn">Exportar</button><button class="btn o" id="impBtn">Importar</button></div>
-        <input type="file" id="impFile" accept="application/json" class="hidden">
+        <input type="file" id="impFile" accept=".json,application/json,text/plain" class="hidden">
       </div>
       <p class="note" style="text-align:center">Modelo: Mod.61 – Mapa de Registo de Despesas Individual</p>
     </main>
@@ -925,11 +925,11 @@ $('icsBtn').onclick=()=>{const d=new Date();d.setDate(d.getDate()+((5-d.getDay()
   'BEGIN:VALARM','TRIGGER:-PT0M','ACTION:DISPLAY','DESCRIPTION:Enviar Mod.61','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
   dl(new File([ics],'Lembrete_Mod61.ics',{type:'text/calendar'}))};
 $('expBtn').onclick=async()=>{const files={};for(const k of await idb.keys('files')){const b=await idb.get('files',k);files[k]={type:b.type,data:await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)})}}
-  dl(new File([JSON.stringify({v:1,state:S,files})],'Mod61_copia_'+today()+'.json',{type:'application/json'}))};
+  const f=new File([JSON.stringify({v:1,state:S,files})],'Mod61_copia_'+today()+'.json',{type:'application/json'});await saveFile(f);const n=Object.values(S.weeks).reduce((a,w)=>a+w.expenses.length,0);toast('Cópia criada: '+n+' despesas, '+Object.keys(files).length+' faturas')};
 $('impBtn').onclick=()=>$('impFile').click();
 $('impFile').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());if(!j.state)throw new Error('ficheiro inválido');
   if(!confirm('Substituir os dados deste telemóvel pela cópia?'))return;S=j.state;for(const[k,v]of Object.entries(j.files||{})){const b=await (await fetch(v.data)).blob();await idb.set('files',k,b)}
-  await save();fillProfile();render();toast('Cópia importada')}catch(e){toast('Não foi possível importar: '+e.message)}ev.target.value=''};
+  await save();fillProfile();render();const n=Object.values(S.weeks).reduce((a,w)=>a+w.expenses.length,0);toast('Cópia importada: '+n+' despesas, '+Object.keys(j.files||{}).length+' faturas')}catch(e){toast('Não foi possível importar: '+e.message)}ev.target.value=''};
 
 /* ---------- navegação ---------- */
 function go(t){['semana','hist','perfil'].forEach(x=>$('v-'+x).classList.toggle('hidden',x!==t));
